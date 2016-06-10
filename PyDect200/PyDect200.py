@@ -6,7 +6,7 @@ Module to Control the AVM DECT200 Socket
 
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import hashlib, sys
+import hashlib, sys, ssl
 try:
     import urllib.request as urllib2
 except ImportError:
@@ -21,14 +21,16 @@ class PyDect200(object):
     __author_email__ = u'mathias@mperlet.de'
     __description__ = u'Control Fritz AVM DECT200'
 
-    __fritz_url = u'http://fritz.box'
+    __fritz_url = u'https://fritz.box'
     __homeswitch = u'/webservices/homeautoswitch.lua'
 
     __debug = False
 
-    def __init__(self, fritz_password):
+    def __init__(self, fritz_password,username):
         """The constructor"""
         self.__password = fritz_password
+        self.__username = username
+        self.__context = ssl._create_unverified_context()
         self.get_sid()
 
 
@@ -47,7 +49,7 @@ class PyDect200(object):
     def __query(cls, url):
         """Reads a URL"""
         try:
-            return urllib2.urlopen(url).read().decode('utf-8').replace('\n', '')
+            return urllib2.urlopen(url,context=ssl._create_unverified_context()).read().decode('utf-8').replace('\n', '')
         except urllib2.HTTPError:
             _, exception, _ = sys.exc_info()
             if cls.__debug:
@@ -79,7 +81,7 @@ class PyDect200(object):
         base_url = u'%s/login_sid.lua' % self.__fritz_url
         get_challenge = None
         try:
-            get_challenge = urllib2.urlopen(base_url).read().decode('ascii')
+            get_challenge = urllib2.urlopen(base_url,context=ssl._create_unverified_context()).read().decode('ascii')
         except urllib2.HTTPError as exception:
             print('HTTPError = ' + str(exception.code))
         except urllib2.URLError as  exception:
@@ -98,7 +100,7 @@ class PyDect200(object):
         md5hash.update(challenge_b)
 
         response_b = challenge + '-' + md5hash.hexdigest().lower()
-        get_sid = urllib2.urlopen('%s?response=%s' % (base_url, response_b)).read().decode('utf-8')
+        get_sid = urllib2.urlopen('%s?username=%s&response=%s' % (base_url, self.__username,response_b),context=ssl._create_unverified_context()).read().decode('utf-8')
         self.sid = get_sid.split('<SID>')[1].split('</SID>')[0]
 
     def get_info(self):
