@@ -18,8 +18,9 @@ except:
 
 print(u"Welcome to PyDect200 v%s, the Python AVM-DECT200 API" % PyDect200.__version__)
 fritzbox_pw = getpass.getpass(prompt='Please insert your fritzbox-password: ', stream=None)
+fritzbox_user = getpass.getpass(prompt='Please insert your fritzbox-username: ', stream=None)
 print(u'Thank you, please wait few seconds...')
-f = PyDect200(fritzbox_pw)
+f = PyDect200(fritzbox_pw, fritzbox_user)
 try:
         info = f.get_info()
         power = f.get_power_all()
