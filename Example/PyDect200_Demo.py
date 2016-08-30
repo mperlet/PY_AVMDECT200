@@ -21,7 +21,12 @@ fritzbox_user = getpass.getpass(prompt='Please insert your fritzbox-username: ',
 fritzbox_pw = getpass.getpass(prompt='Please insert your fritzbox-password: ', stream=None)
 
 print(u"Welcome to PyDect200 v%s, the Python AVM-DECT200 API" % PyDect200.__version__)
-f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "fritz.pem","https://fritz.box")
+
+# you can also use the .crt exported from your Browser llike FireFox
+# Firfox: -> go to login site of your FritBox
+# Right Click->Siteinfromation->Security->Show Certificate->Export
+# Save it
+f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "/home/fritz.pem","https://fritz.box")
 f.get_sid() # SID will be timedout after 1h you have to fetch an new one after timeout
 try:
         info = f.get_info()
