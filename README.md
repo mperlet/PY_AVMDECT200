@@ -3,7 +3,7 @@
 
 ```
 In [1]: from PyDect200 import PyDect200
-In [2]: f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "fritz.pem","https://fritz.box")
+In [2]: f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "/home/fritz.pem","https://fritz.box")
 In [3]: f.get_sid() # get the sid will you get a new login
 In [4]: f.get_device_names()
 Out[4]: {'16': 'Beleuchtung', '17': 'Fernseher'}
