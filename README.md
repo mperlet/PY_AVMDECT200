@@ -1,7 +1,7 @@
 
 ### Example Code
 
-'''
+```
 In [1]: from PyDect200 import PyDect200
 In [2]: f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "fritz.pem","https://fritz.box")
 In [3]: f.get_sid() # get the sid will you get a new login
@@ -18,7 +18,7 @@ Out[6]:
 In [7]: f.get_power()
 Out[7]: {u'16': 68.95, u'17': 0.0}
 In [8]: f.logout()
-'''
+```
 
 ### Tested with
 
