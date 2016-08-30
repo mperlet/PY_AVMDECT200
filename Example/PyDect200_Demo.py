@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -- coding: utf-8 --
+
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
@@ -15,6 +16,9 @@ try:
     PyDect200.__version__
 except:
     PyDect200 = PyDect200.PyDect200
+
+fritzbox_user = getpass.getpass(prompt='Please insert your fritzbox-username: ', stream=None)
+fritzbox_pw = getpass.getpass(prompt='Please insert your fritzbox-password: ', stream=None)
 
 print(u"Welcome to PyDect200 v%s, the Python AVM-DECT200 API" % PyDect200.__version__)
 f = PyDect200.PyDect200(fritzbox_pw, fritzbox_user, "fritz.pem","https://fritz.box")
