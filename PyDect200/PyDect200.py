@@ -6,7 +6,7 @@ Module to Control the AVM DECT200 Socket
 
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-import hashlib, sys
+import hashlib, sys, ssl
 try:
     import urllib.request as urllib2
 except ImportError:
@@ -21,21 +21,32 @@ class PyDect200(object):
     __author_email__ = u'mathias@mperlet.de'
     __description__ = u'Control Fritz AVM DECT200'
 
-    __fritz_url = u'http://fritz.box'
+    __fritz_url = u'https://fritz.box'
     __homeswitch = u'/webservices/homeautoswitch.lua'
 
     __debug = False
 
-    def __init__(self, fritz_password):
+    def __init__(self, fritz_password,username, cert=None,fritz_url=None):
         """The constructor"""
         self.__password = fritz_password
-        self.get_sid()
+        self.__username = username
+        self.__fritz_url = fritz_url
+        if not fritz_url:
+            self.__fritz_url = u'https://fritz.box'
+            
+        if not cert:
+            self.__context = ssl._create_unverified_context()
+            print("Warning SSL certificate unverified")
+        else:
+            self.__context = ssl.create_default_context(cafile=cert)
+            self.__context.verify_mode = ssl.CERT_REQUIRED
+            self.__context.check_hostname = True
+            print("SSL activ")
 
-
-    def set_url(self, url):
+    def set_url(self, url, ssl_conext):
         """Set alternative url"""
         self.__fritz_url = url
-
+        self.__context = context
 
     def __homeauto_url_with_sid(self):
         """Returns formatted uri"""
@@ -44,10 +55,11 @@ class PyDect200(object):
                                  self.sid)
 
     @classmethod
-    def __query(cls, url):
+    def __query(cls, url,context):
         """Reads a URL"""
+        
         try:
-            return urllib2.urlopen(url).read().decode('utf-8').replace('\n', '')
+            return urllib2.urlopen(url,context=context).read().decode('ascii').replace('\n', '')
         except urllib2.HTTPError:
             _, exception, _ = sys.exc_info()
             if cls.__debug:
@@ -64,22 +76,21 @@ class PyDect200(object):
             pass
         return "inval"
 
-
-
     def __query_cmd(self, command, device=None):
         """Calls a command"""
         url = u'%s&switchcmd=%s' % (self.__homeauto_url_with_sid(), command)
         if device is None:
-            return self.__query(url)
+            res = self.__query(url,self.__context)
+            return res
         else:
-            return self.__query('%s&ain=%s' % (url, device))
+            return self.__query('%s&ain=%s' % (url, device),self.__context)
 
     def get_sid(self):
         """Returns a valid SID"""
         base_url = u'%s/login_sid.lua' % self.__fritz_url
         get_challenge = None
         try:
-            get_challenge = urllib2.urlopen(base_url).read().decode('ascii')
+            get_challenge = urllib2.urlopen(base_url,context=self.__context).read().decode('ascii')
         except urllib2.HTTPError as exception:
             print('HTTPError = ' + str(exception.code))
         except urllib2.URLError as  exception:
@@ -88,19 +99,25 @@ class PyDect200(object):
             print('generic exception: ' + str(exception))
             raise
 
-
-        challenge = get_challenge.split(
-            '<Challenge>')[1].split('</Challenge>')[0]
-        challenge_b = (
-            challenge + '-' + self.__password).encode().decode('iso-8859-1').encode('utf-16le')
+        challenge = get_challenge.split('<Challenge>')[1].split('</Challenge>')[0]
+        challenge_b = (challenge + '-' + self.__password).encode().decode('iso-8859-1').encode('utf-16le')
 
         md5hash = hashlib.md5()
         md5hash.update(challenge_b)
 
         response_b = challenge + '-' + md5hash.hexdigest().lower()
-        get_sid = urllib2.urlopen('%s?response=%s' % (base_url, response_b)).read().decode('utf-8')
+        get_sid = urllib2.urlopen('%s?username=%s&response=%s' % (base_url, self.__username,response_b),context=self.__context).read().decode('utf-8')
+        
         self.sid = get_sid.split('<SID>')[1].split('</SID>')[0]
-
+        
+    def logout(self):
+        url = u"%s&logout=1" % self.__homeauto_url_with_sid()
+        try:
+            urllib2.urlopen(url,context=self.__context)
+        except:
+            pass
+        
+        
     def get_info(self):
         """Returns device info"""
         return self.get_state_all()
@@ -187,3 +204,6 @@ class PyDect200(object):
         for device in self.get_device_names().keys():
             state_dict[device] = self.get_state(device)
         return state_dict
+        
+    def __del__(self):
+        self.logout()
